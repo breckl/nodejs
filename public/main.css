@@ -1,0 +1,20 @@
+.div-centered {
+	margin:150px auto;
+}
+
+.form-centered {
+	width:350px;
+}
+
+.text-centered {
+	text-align: center;
+}
+
+.margin-bottom-30 {
+	margin-bottom:30px;
+}
+
+.dashboard-report {
+	float:left;
+	width:100%;
+}
