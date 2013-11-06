@@ -40,7 +40,7 @@ new mongodb.Db('reports', server, {journal:true}).open(function(err, client){
 		app.users = new mongodb.Collection(client, 'users');
 
 		app.listen(8888, function(){
-			console.log('\033[96m + \033[39m Listening on port 80');
+			console.log('\033[96m + \033[39m Listening on port 8888');
 		});
 	});
 

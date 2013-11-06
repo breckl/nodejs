@@ -1,20 +1,38 @@
 
-	<h1>Dashboard</h1>
+	<div class="page-header">
+		<h1>Dashboard</h1>
+		<p>
+			Welcome {{username}}
+		</p>
+	</div>
 
-	<p>
-	Welcome {{username}}
-	</p>
+	<div class="date-ranges">
 
-	<p>
+		<form class="form-inline" role="form">
+			<div class="form-group">
+	   			<label class="sr-only" for="startDate">Start Date</label>
+	    		<input type="text" class="date form-control" name="startDate" placeholder="Start Date">
+	  		</div>
+	  		<div class="form-group">
+	   			<label class="sr-only" for="endDate">End Date</label>
+	    		<input type="text" class="date form-control" name="endDate" placeholder="End Date">
+	  		</div>
+	  	</form>
+
+	</div>
+
+	<div class="report-buttons">
 		<a class="btn btn-primary" id="sales-by-date">Get Daily Sales</a>
 		<a class="btn btn-primary" id="stats-by-date">Get Daily Stats</a>
 		<a class="btn btn-primary" id="daily-sales-chart">Daily Sales Chart</a>
-	</p>
+	</div>
 
-	<p>
+
+
+	<!-- <p>
 		<span class="report-message"></span>
 	</p>
-
+ -->
 
 	<div class="dashboard-report">
 

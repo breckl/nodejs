@@ -15,6 +15,15 @@
 }
 
 .dashboard-report {
+	margin-top:20px;
 	float:left;
 	width:100%;
 }
+
+.date-ranges {
+	margin-top:20px;
+}
+
+/*div {
+	border:1px solid silver;
+}*/

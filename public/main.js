@@ -13,6 +13,8 @@ $(document).ready(function(){
 
 	$("#signup-submit").click(signupPost);
 
+	$(".date").datepicker();
+
 
 	// DataTables Bootstrap setup
 	// $.extend( true, $.fn.dataTable.defaults, {
@@ -161,7 +163,7 @@ var loginPost = function(){
 
 
 function getReportData(reportId) {
-	mrAjax("/sales", "get", "reportId=" + reportId, $(".report"), function(id, content){
+	mrAjax("/sales", "get", "reportId=" + reportId, $(".dashboard-report"), function(id, content){
 
 		// Id 1 = success
 		if (id == "1") {
