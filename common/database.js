@@ -31,11 +31,17 @@ var mysql = require('mysql');
 
 exports.connectToData = function(){
 
-	var db_host = 'localhost',
+	// var db_host = 'localhost',
+	// 	db_port = '3306',
+	//     db_user = 'root',
+	//     db_name = 'reportdata',
+	//     db_password = '123';
+
+	var db_host = 'reportserver.czmefevkkekv.us-west-1.rds.amazonaws.com',
 		db_port = '3306',
-	    db_user = 'root',
-	    db_name = 'reportdata',
-	    db_password = '123';
+	    db_user = 'awsuser',
+	    db_name = 'reports',
+	    db_password = 'asher2011';
 
 	var connection = mysql.createConnection({
 		host : db_host,
