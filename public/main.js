@@ -3,11 +3,13 @@ $(document).ready(function(){
 	//google.setOnLoadCallback(drawVisualization);
 
 
-	$("#sales-by-date").click(function(){ getReportData(1); });
+	$("#sales-by-date").click(function(){ getReportData(1, 1); });
 
-	$("#stats-by-date").click(function(){ getReportData(2); });
+	$("#stats-by-date").click(function(){ getReportData(2, 1); });
 
-	$("#daily-sales-chart").click(function(){ getReportData(101); });
+	$("#daily-sales-chart").click(function(){ getReportData(101, 1); });
+
+	$("#order-detail").click(function(){ getReportData(3, 2); });
 
 	$("#login-submit").click(loginPost);
 
@@ -33,38 +35,6 @@ $(document).ready(function(){
 function drawVisualization(chartData) {
         // Create and populate the data table.
         console.log(chartData);
-        // var data = google.visualization.arrayToDataTable([
-        //   ['x', 'Cats', 'Blanket 1', 'Blanket 2'],
-        //   ['A',   1,       1,           0.5],
-        //   ['B',   2,       0.5,         1],
-        //   ['C',   4,       1,           0.5],
-        //   ['D',   8,       0.5,         1],
-        //   ['E',   7,       1,           0.5],
-        //   ['F',   7,       0.5,         1],
-        //   ['G',   8,       1,           0.5],
-        //   ['H',   4,       0.5,         1],
-        //   ['I',   2,       1,           0.5],
-        //   ['J',   3.5,     0.5,         1],
-        //   ['K',   3,       1,           0.5],
-        //   ['L',   3.5,     0.5,         1],
-        //   ['M',   1,       1,           0.5],
-        //   ['N',   1,       0.5,         1]
-        // ]);
-
-		// chartData = chartData.replace('[', '');
-		// chartData = chartData.replace(']', '');
-
-		// console.log('No brackets: ' + chartData);
-		// chartData = chartData.replace(/{/g, '[');
-		// console.log('Left switch: ' + chartData);
-		// chartData = chartData.replace(/}/g, ']');
-		// console.log('Finished: ' + chartData);
-
-
-		// for (var index in chartData) {
-		// 	dataArray.push([index, chartData[index]]);
-		// }
-
 
 		var data = new google.visualization.DataTable();
       	data.addColumn('date', 'Business Day');
@@ -160,10 +130,29 @@ var loginPost = function(){
 
 };
 
+var getStoredData = function(reportId){
+	mrAjax("/saved-data", "get", "reportId=" + reportId, $(".dashboard-report"), function(id, content){
+
+		if (id == "1") {
+			$(".dashboard-report").html(content);
+		}
+
+	});
+};
 
 
-function getReportData(reportId) {
-	mrAjax("/sales", "get", "reportId=" + reportId, $(".dashboard-report"), function(id, content){
+
+function getReportData(reportId, reportType) {
+
+	// Set URI depending upon reportType 1 = fetch from server 2 = local MySQL
+	if (reportType == 1) {
+		var routeURI = '/sales';
+	}
+	else if (reportType == 2) {
+		var routeURI = '/saved-data';
+	}
+
+	mrAjax(routeURI, "get", "reportId=" + reportId, $(".dashboard-report"), function(id, content){
 
 		// Id 1 = success
 		if (id == "1") {
@@ -171,7 +160,20 @@ function getReportData(reportId) {
 			// Tables
 			if ((reportId >= "1") && (reportId <= "100")) {
 
-				var reportArray = JSON.parse(content);
+				if (reportId == "3") {
+
+					var reportArray = JSON.parse(content, function(key, value){
+						if (key == 'Business_Day') {
+							return 'Business Day';
+						}
+
+						return value;
+					});
+				}
+				else {
+					var reportArray = JSON.parse(content);
+				}
+
 				$(".dashboard-report").html(ConvertJsonToTable(reportArray, 'report-results', 'table table-striped table-hover'));
 				$("#report-results").dataTable({
 	 					"sPaginationType" : "bs_full"
