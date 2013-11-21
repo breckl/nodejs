@@ -274,62 +274,104 @@ exports.update = function(req, res){
 
 exports.saved = function(req, res){
 
-	if (req.query.reportId == 3) {
+	var sqlParams;
 
-		var sqlParams = { sql : 'SELECT * FROM orders',
-						  // Takes long date format and converts it to a string
-						  typeCast : function(field, next) {
-						  	if (field.type == 'DATE') {
-						  		// required that you use field.string(), field.buffer() or field.geometry() with
-						  		// custom typecasting
-						  		return moment(Date(field.buffer())).format('YYYY-MM-DD');
-						  	  }
-						  	  return next();
-						  }
+	switch (req.query.reportId)
+	{
+
+		// Order Totals by Day
+		case "1" :
+			sqlParams = { sql : 'SELECT Business_Day AS "Business Day",' +
+								'SUM(Total_Amount) AS "Sales",' +
+								'SUM(Tips) AS "Tips",' +
+								'SUM(Discounts) As Discounts,' +
+								'SUM(Taxes) AS Taxes ' +
+								'FROM orders ' +
+								'GROUP BY Business_Day' } ;
+
+		break;
+
+		// Order Detail
+		case "3" :
+
+			sqlParams = { sql : 'SELECT * FROM orders' } ;
+
+		break;
+
+		// Daily Sales Chart
+		case "101" :
+
+			sqlParams = { sql : 'SELECT Business_Day AS "Business Day", SUM(Total_Amount) AS "Total Sales" ' +
+								'FROM orders ' +
+								'GROUP BY Business_Day'
 						};
-
-		connection.query(sqlParams, function(err, results){
-			if (err) {
-				res.send('0' + 'Error:' + err);
-				throw err;
-			}
-			else {
-
-				//console.log("Query array:" + results);
-
-				// Convert results (array) into JSON (string)
-				//var formattedJSON = JSON.stringify(results, function(key, value){
-					//if (key = "Business_Day") return value.toString('yyyy-MM-DD');
-					// return value;
-					//var newKey = key.replace('_', ' ');
-					//console.log(key + ' ' + value);
-					//return newKey;
-				//});
-
-				//console.log("Formatted JSON:" + formattedJSON);
-				//console.log(results[1].Business_Day.toString('yyyy-MM-DD'));
-
-				console.log("JSON stringify:" + JSON.stringify(results));
-
-				res.send('1' + JSON.stringify(results));
-			}
-
-
-		});
+			console.log('chart!');
+		break;
 	}
 
+	// Respond with JSON or error
+	SQLtoJSON(sqlParams, function(result){
+		res.send(result);
+	});
+
 };
+
+// Takes SQL and returns JSON - callback includes ResultID + JSON (or error)
+function SQLtoJSON(sqlParams, callback) {
+
+	//sqlParams = mySQLParams(sql);
+
+	console.log('SQL %s', sqlParams.sql);
+
+	connection.query(sqlParams, function(err, results){
+
+		if (err) {
+
+			callback('0' + 'Error:' + err);
+			throw err;
+
+		}
+		else {
+
+			var JSONtoSend = JSON.stringify(results);
+
+			console.log("JSON stringify: %s", JSONtoSend);
+
+			callback('1' + JSONtoSend);
+		}
+	});
+
+}
+
+// Takes node-sql date and converts from full date and time to string date
+function mySQLParamsWithDate(sql){
+	var sqlParams = { sql : sql,
+
+				  // required that you use field.string(), field.buffer() or field.geometry() with
+				  // custom typecasting
+				  typeCast : function(field, next) {
+				  	if (field.type == 'DATE') {
+				  		return moment(Date(field.buffer())).format('YYYY-MM-DD');
+				  	}
+				  	return next();
+				  }
+
+				};
+
+	return sqlParams;
+}
 
 
 exports.sales = function(req, res){
 
-	console.log(req.query.reportId);
+	/*console.log(req.query.reportId);
 	request.get('http://localhost:3000/?userID=100&reportId=' + req.query.reportId, function(error, response, body){
 
 		if (!error) {
 
 			console.log(body);
 
+			// Error responses from restaurant server
 			switch (response.statusCode){
 
 				case 200 :
@@ -366,7 +408,7 @@ exports.sales = function(req, res){
 			//console.log(response.statusCode);
 			res.send('0' + 'Unable to connect to restaurant server');
 		}
-	});
+	});*/
 
 };
 

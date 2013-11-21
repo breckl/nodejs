@@ -44,13 +44,13 @@ String.prototype.format = function()
  * @param tableId string Optional table id
  * @param tableClassName string Optional table css class name
  * @param linkText string Optional text replacement for link pattern
- * @param currencyField - BDL added it to format currency fields - pass an array of fields that will be currency
+ * @param fieldDefs - BDL added it to format currency fields - pass an array of fields that will be currency
  *
  * @return string Converted JSON to HTML table
  *
  *
  */
-function ConvertJsonToTable(parsedJson, tableId, tableClassName, linkText, currencyFields)
+function ConvertJsonToTable(parsedJson, tableId, tableClassName, linkText, fieldDefs)
 {
     //Patterns for links and NULL value
     var italic = '<i>{0}</i>';
@@ -120,10 +120,22 @@ function ConvertJsonToTable(parsedJson, tableId, tableClassName, linkText, curre
                 {
                     for (j = 0; j < headers.length; j++)
                     {
+
+                        // **************************
+                        //
+                        // BDL added custom code to format current and dates depending on
+                        // fields passed in fieldDefs parameter
+                        //
+                        // **************************
+
                         // headers[j] is the field name
                         // check to see if field is in the currency array we passed using jQuery method
-                        if ($.inArray(headers[j], currencyFields) > -1) {
+                        if ($.inArray(headers[j], fieldDefs.currencyFields) > -1) {
                             var value = parseFloat(parsedJson[i][headers[j]]).toMoney(2, '.', ',');
+                        }
+                        //if it's a date, convert to a nicely formatted string using momentjs (momentjs.com)
+                        else if ($.inArray(headers[j], fieldDefs.dateFields) > -1) {
+                            var value = moment(parsedJson[i][headers[j]]).format('L');
                         }
                         else {
                             var value = parsedJson[i][headers[j]];
