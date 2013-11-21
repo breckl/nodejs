@@ -1,11 +1,12 @@
 var database = require('../common/database'),
-    request = require('request');
+    request = require('request'),
+    moment = require('moment');	// for date formatting
 
 var connection = database.connectToData();
 
 // ****************************
 //
-//          SIGN UP / LOGIN
+//      SIGN UP / LOGIN
 //
 // ****************************
 
@@ -22,8 +23,8 @@ exports.signupView = function (req, res){
 exports.signupPost = function(req, res){
 	//res.render('signup');
 
-	console.log(req.body.user);
-	console.log('signup post');
+	//console.log(req.body.user);
+	//console.log('signup post');
 
 
 	var user = {
@@ -47,7 +48,7 @@ exports.signupPost = function(req, res){
 		else {
 
 			//app.users.insert(req.body.user, function(err, doc){
-			console.log(user);
+			console.log('Signed up: ' + user);
 			connection.query('INSERT INTO users SET ?', user, function(err, rows, fields) {
 
 				if (err) {
@@ -66,22 +67,35 @@ exports.loginPost = function(req, res){
 
 	var user = {
 		email : req.body.email,
-		password : req.body.password,
-		name : req.body.name
+		password : req.body.password
 	};
 
-	console.log(req.body);
+	loginUser(user, function(resultId, resultMessage){
 
-	if (user.email && user.password) {
+		// Logged in
+		if (resultId == 1) {
 
-		console.log('step 1');
+			// Set session variables
+			req.session.userId = user.ID;
+			req.session.username = user.name;
+			req.session.useremail = user.email;
+
+			res.send("1" + user.name);
+		}
+		else {
+			res.send(resultId + resultMessage);
+		}
+
+	});
+
+/*
+DEPRECATED - REPLACED BY loginUser
+if (user.email && user.password) {
 
 		// Find the user by email
 		connection.query('SELECT ID, Email, Username FROM users WHERE Email = ?', [user.email], function(err, rows, fields) {
 
-			console.log(rows);
-			console.log(rows[0].Email);
-			// console.log(doc);
+			console.log('Login: ' + rows);
 
 			if (err) {
 				res.send("0" + err);
@@ -103,20 +117,74 @@ exports.loginPost = function(req, res){
 						res.send("1" + user.name);
 					}
 					else {
-						console.log('wrong password');
 						res.send("0" + "Incorrect password");
 					}
 				}
 				// If we didn't find the email
 				else {
-					console.log('email not found');
 					res.send("0" + "Email not found");
 				}
 			}
 
 		});
-	}
+	} */
 };
+
+
+function loginUser(user, callback){
+
+	// for the callback
+	var result = {};
+
+	// Check to be sure both are not blank
+	if (user.email && user.password) {
+
+		connection.query('SELECT ID, Email, Username, Password FROM users WHERE Email = ?', [user.email], function(err, rows, fields) {
+
+			// Error check
+			if (err) {
+				return ("0" + err);
+			}
+
+			if (rows.length > 0) {
+
+				if (rows[0].Password == user.password){
+
+					user.name = rows[0].Username;
+					user.ID = rows[0].ID;
+
+					result.id = 1;
+
+					console.log('%s logged in', user.name);
+
+
+				}
+				else {
+					result.id = 0;
+					result.message = "Incorrect Password";
+				}
+			}
+			else {
+				result.id = 0;
+				result.message = "Email not found";
+			}
+
+			callback(result.id, result.message);
+		});
+	}
+	else {
+		result.id = 0;
+		result.message ="Email or password was blank";
+	}
+
+	// Handle error result
+	if (result.id == 0){
+
+		console.log(result.message);
+
+		callback(result.id, result.message);
+	}
+}
 
 
 
@@ -128,42 +196,79 @@ exports.loginPost = function(req, res){
 
 exports.update = function(req, res){
 
-	console.log('/update');
-	//console.log(req);
-	//console.log(req.body);
+	console.log('API update from %s', req.ip);
 
+	// the JSON object
+	// -- header (email, password)
+	// -- content (actual pos data)
 	var JSON = req.body;
-	var name;
 
-	// Get fieldnames
-	var fieldNames = [];
-	for (name in JSON[0]){
-		fieldNames.push(name);
-	}
 
-	//console.log(fieldNames);
+	// Create user object
+	var user = {
+		email : JSON.header[0].Email,
+		password : JSON.header[0].Password
+	};
 
-	// Create array from JSON
-	var newValues = [];
-	for (var fieldIndex = 0; fieldIndex < JSON.length; fieldIndex++){
-		var businessDay = "'" + JSON[fieldIndex].Business_Day + "'";
-		newValues.push('(' + businessDay + ',' + JSON[fieldIndex].Total_Amount + ',' +
-						     JSON[fieldIndex].Tips + ',' + JSON[fieldIndex].Discounts + ',' + JSON[fieldIndex].Taxes + ')');
-	}
+	// Login user
+	loginUser(user, function(resultId, resultMessage){
 
-	//console.log(newValues);
+		// Passed login
+		if (resultId == 1) {
 
-	connection.query('INSERT INTO orders (' + fieldNames.join(',') + ') VALUES ' + newValues.join(','), function(err, result){
-		if (err) throw err;
+			console.log('%s logged in for update', user.name);
 
-		console.log('Report data imported!');
+			var name;
+
+			// Get fieldnames
+			var fieldNames = [];
+			for (name in JSON.content[0]){
+				fieldNames.push(name);
+			}
+
+			fieldNames.push('User_ID'); // add user id
+
+			// Create array from JSON
+			var newValues = [];
+
+			for (var recordIndex = 0; recordIndex < JSON.content.length; recordIndex++){
+				var businessDay = "'" + JSON.content[recordIndex].Business_Day + "'";
+				var userID = "'" + JSON.header[0] + "'"; // not working
+				newValues.push('(' +
+								businessDay + ',' +
+								JSON.content[recordIndex].Total_Amount + ',' +
+								JSON.content[recordIndex].Tips + ',' +
+								JSON.content[recordIndex].Discounts + ',' +
+								JSON.content[recordIndex].Taxes + ',' +
+								JSON.content[recordIndex].Number + ',' +
+								user.ID + ')');
+			}
+
+			// console.log(newValues);
+
+			connection.query('INSERT INTO orders (' + fieldNames.join(',') + ') VALUES ' + newValues.join(','), function(err, result){
+				if (err) throw err;
+
+				console.log('%s data inserted', user.name);
+				res.send('Data successfully received');
+
+			});
+		}
+
+		// Error logging in - result = 0
+		else {
+
+			console.log(resultMessage);
+			res.send(resultMessage);
+
+		}
 	});
 };
 
 
 // ****************************
 //
-//          GET SAVED DATA
+//      GET SAVED DATA
 //
 // ****************************
 
@@ -171,24 +276,40 @@ exports.saved = function(req, res){
 
 	if (req.query.reportId == 3) {
 
-		connection.query('SELECT * FROM orders', function(err, results){
+		var sqlParams = { sql : 'SELECT * FROM orders',
+						  // Takes long date format and converts it to a string
+						  typeCast : function(field, next) {
+						  	if (field.type == 'DATE') {
+						  		// required that you use field.string(), field.buffer() or field.geometry() with
+						  		// custom typecasting
+						  		return moment(Date(field.buffer())).format('YYYY-MM-DD');
+						  	  }
+						  	  return next();
+						  }
+						};
+
+		connection.query(sqlParams, function(err, results){
 			if (err) {
 				res.send('0' + 'Error:' + err);
 				throw err;
 			}
 			else {
 
-				console.log(results);
+				//console.log("Query array:" + results);
 
-				var formattedJSON = JSON.stringify(results, function(key, value){
-					if (key = "BusinessDay") return "Business Day";
-					return value;
+				// Convert results (array) into JSON (string)
+				//var formattedJSON = JSON.stringify(results, function(key, value){
+					//if (key = "Business_Day") return value.toString('yyyy-MM-DD');
+					// return value;
 					//var newKey = key.replace('_', ' ');
 					//console.log(key + ' ' + value);
 					//return newKey;
-				});
+				//});
 
-				console.log(formattedJSON);
+				//console.log("Formatted JSON:" + formattedJSON);
+				//console.log(results[1].Business_Day.toString('yyyy-MM-DD'));
+
+				console.log("JSON stringify:" + JSON.stringify(results));
 
 				res.send('1' + JSON.stringify(results));
 			}
@@ -250,7 +371,7 @@ exports.sales = function(req, res){
 };
 
 exports.dashboard = function(req, res){
-	console.log(req.session.username);
+	console.log('%s logged in to dashboard', req.session.username);
 	//console.log("log:" + req.params.userId);
 	//console.log("body:" + req.body[userId]);
 
@@ -275,7 +396,7 @@ exports.index = function(req, res){
 
 	res.render('index', {firstname:'Breck', lastname:'LeSueur'});
 	//res.send(req.body);
-	console.log('Got ' + req.query.firstname + ' ' + req.query.lastname);
+	//console.log('Got ' + req.query.firstname + ' ' + req.query.lastname);
 };
 
 exports.report = function(req, res){
