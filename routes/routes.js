@@ -76,7 +76,7 @@ exports.loginPost = function(req, res){
 		if (resultId == 1) {
 
 			// Set session variables
-			req.session.userId = user.ID;
+			req.session.userID = user.ID;
 			req.session.username = user.name;
 			req.session.useremail = user.email;
 
@@ -111,7 +111,7 @@ if (user.email && user.password) {
 
 					// Check password
 					if (rows[3] == user.password) {
-						req.session.userId = rows[0].ID.toString();
+						req.session.userID = rows[0].ID.toString();
 						req.session.username = user.name;
 						req.session.useremail = user.email;
 						res.send("1" + user.name);
@@ -274,56 +274,62 @@ exports.update = function(req, res){
 
 exports.saved = function(req, res){
 
-	var sqlParams;
-
 	switch (req.query.reportId)
 	{
 
 		// Order Totals by Day
 		case "1" :
-			sqlParams = { sql : 'SELECT Business_Day AS "Business Day",' +
+			sql = {	start : 'SELECT Business_Day AS "Business Day",' +
 								'SUM(Total_Amount) AS "Sales",' +
 								'SUM(Tips) AS "Tips",' +
 								'SUM(Discounts) As Discounts,' +
 								'SUM(Taxes) AS Taxes ' +
-								'FROM orders ' +
-								'GROUP BY Business_Day' } ;
-
+								'FROM orders ',
+					end : 'GROUP BY Business_Day'
+				};
 		break;
 
 		// Order Detail
 		case "3" :
 
-			sqlParams = { sql : 'SELECT * FROM orders' } ;
+			sql = {	start : 'SELECT * FROM orders '
 
+				};
 		break;
 
 		// Daily Sales Chart
 		case "101" :
 
-			sqlParams = { sql : 'SELECT Business_Day AS "Business Day", SUM(Total_Amount) AS "Total Sales" ' +
-								'FROM orders ' +
-								'GROUP BY Business_Day'
+			sql = {	start : 'SELECT Business_Day AS "Business Day", SUM(Total_Amount) AS "Total Sales" ' +
+								'FROM orders ',
+
+							end : 'GROUP BY Business_Day'
 						};
-			console.log('chart!');
 		break;
 	}
 
+
+	// Build final sql
+	sql.complete = sql.start +
+					' WHERE User_ID = ? ';
+	if (!!sql.end) { sql.complete = sql.complete + sql.end; }
+
+
 	// Respond with JSON or error
-	SQLtoJSON(sqlParams, function(result){
+	SQLtoJSON(sql.complete, [req.session.userID], function(result){
 		res.send(result);
 	});
 
 };
 
 // Takes SQL and returns JSON - callback includes ResultID + JSON (or error)
-function SQLtoJSON(sqlParams, callback) {
+function SQLtoJSON(sql, values, callback) {
 
 	//sqlParams = mySQLParams(sql);
 
-	console.log('SQL %s', sqlParams.sql);
+	console.log('SQL %s', sql);
 
-	connection.query(sqlParams, function(err, results){
+	connection.query(sql, values, function(err, results){
 
 		if (err) {
 
@@ -335,7 +341,7 @@ function SQLtoJSON(sqlParams, callback) {
 
 			var JSONtoSend = JSON.stringify(results);
 
-			console.log("JSON stringify: %s", JSONtoSend);
+			//console.log("JSON stringify: %s", JSONtoSend);
 
 			callback('1' + JSONtoSend);
 		}
@@ -414,12 +420,12 @@ exports.sales = function(req, res){
 
 exports.dashboard = function(req, res){
 	console.log('%s logged in to dashboard', req.session.username);
-	//console.log("log:" + req.params.userId);
+	//console.log("log:" + req.params.userID);
 	//console.log("body:" + req.body[userId]);
 
 	// do a second check and matchup username and email
 	// ADD THIS BACK IN LATER
-	// if (req.session.userId) {
+	// if (req.session.userID) {
 	// 	res.render('dashboard', {username:req.session.username});
 	// }
 	// else {
