@@ -1,4 +1,6 @@
 // REQUIRES
+require('newrelic');
+
 var express = require('express'),
     mysql = require('mysql'),
     app = express(), // express
@@ -14,32 +16,6 @@ app.use(express.bodyParser());
 app.use(express.cookieParser());
 app.use(express.session({secret: 'F6A6F7E35D3F22C7'}));
 app.use(express.static('public'));	// makes all resources in public folder available
-
-
-// var connection = database.connectToData();
-
-// connection.connect(function(err){
-
-// 	if (err) {
-// 		throw err;
-// 	}
-// 	else {
-// 		console.log('\033[96m + \033[39m connected to mysql');
-
-// 		app.listen(8888, function(){
-// 			console.log('\033[96m + \033[39m Listening on port 8888');
-// 		});
-// 	}
-
-// 		//return connection;
-// });
-
-
-
-// });
-
-// Not necessary since connection can be implicit by invoking query
-
 
 
 // CONNECT TO 'reports' DATABASE
