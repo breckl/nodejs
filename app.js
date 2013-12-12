@@ -1,5 +1,5 @@
 // REQUIRES
-require('newrelic');
+//require('newrelic');
 
 var express = require('express'),
     mysql = require('mysql'),
