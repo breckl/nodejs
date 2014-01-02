@@ -41,7 +41,7 @@ exports.connectToData = function(){
 		db_port = '3306',
 	    db_user = 'awsuser',
 	    db_name = 'reports',
-	    db_password = 'asher2011';
+	    db_password = '';
 
 	var connection = mysql.createConnection({
 		host : db_host,

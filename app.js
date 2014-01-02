@@ -17,14 +17,12 @@ app.use(express.cookieParser());
 app.use(express.session({secret: 'F6A6F7E35D3F22C7'}));
 app.use(express.static('public'));	// makes all resources in public folder available
 
-
 // CONNECT TO 'reports' DATABASE
 // var mongodbURI = 'ds053808.mongolab.com';
 // var mongodbPort = 53808;
 
 // var mongoURI = '127.0.0.1';
 // var mongoPort = 27017;
-
 // var server = new mongodb.Server(mongodbURI, mongodbPort);
 
 // new mongodb.Db('reports', server, {journal:true}).open(function(err, client){
